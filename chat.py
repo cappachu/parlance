@@ -4,7 +4,7 @@ import sys
 import socket
 import threading
 import struct
-from blessings import Terminal
+import urwid
 import cPickle as pickle
 
 
@@ -58,7 +58,6 @@ class ChatController(object):
             self._sock_recv.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, mreq)
         return self._sock_recv
 
-
     def display(self):
         sock = self.setup_socket_recv()
         sock.bind((MULTICAST_GROUP_IP, MULTICAST_PORT))
@@ -82,40 +81,48 @@ class ChatController(object):
         sock.sendto(msg.pickle(), (MULTICAST_GROUP_IP, MULTICAST_PORT))
         return msg
 
+
 class ChatView(object):
     def __init__(self, chat_controller):
         self.chat_controller = chat_controller
-        self.messages = []
-        self.term = Terminal()
         self.chat_controller.view = self
+        self.messages = []
+        self.init_widgets()
+        
+    def init_widgets(self):
+        self.message_widget = urwid.Text('')
+        self.input_widget = urwid.Edit("> ")
+        self.frame_widget = urwid.Frame(
+                body = urwid.Filler(self.message_widget, valign='top'),
+                footer = self.input_widget,
+                focus_part = 'footer')
+        self.loop = urwid.MainLoop(self.frame_widget, unhandled_input=self.handle_input)
+
+    def handle_input(self, key):
+        if key == 'enter':
+            text = self.input_widget.edit_text
+            if len(text) > 0:
+                if text == 'quit':
+                    raise urwid.ExitMainLoop()
+                message = self.chat_controller.send_msg(text)
+                self.input_widget.set_edit_text('')
 
     def add_message(self, message):
         self.messages.append(message)
-        self.paint()
 
     def show(self):
-        self.paint()
-        while True:
-            self.show_prompt()
+        self.loop.set_alarm_in(0.25, self.paint)
+        self.loop.run()
 
-    def show_prompt(self):
-        with self.term.location(0, self.term.height - 1):
-            text = raw_input("> ")
-            if len(text) > 0:
-                message = self.chat_controller.send_msg(text)
-                # TODO add_message ?
-                self.add_message(message)
-                
+    def paint(self, loop, user_data):
+        self.show_messages()
+        loop.set_alarm_in(0.25, self.paint)
                 
     def show_messages(self):
-        for message in self.messages:
-            print("[%s] : %s" % (message.username, message.text))
-
-    def paint(self):
-        self.show_messages()
-        # move cursor to input line
-
-
+        #print("[%s] : %s" % (message.username, message.text))
+        message_text = '\n'.join([m.text for m in self.messages])
+        self.message_widget.set_text(message_text)
+    
     
 
 
@@ -126,13 +133,6 @@ def main():
         chat_controller = ChatController(username)
         chat_view = ChatView(chat_controller)
         chat_view.show()
-        
-        #if app_type == 'send':
-            #while True:
-                #msg_text = raw_input("> ")
-                #controller.send_msg(msg_text)
-        #elif app_type == 'recv':
-            #controller.view = None
     else:
         print 'Usage: chat username'
 
