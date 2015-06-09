@@ -21,6 +21,9 @@ class Message(object):
     def pickle(self):
         return pickle.dumps(self) 
 
+    def __str__(self):
+        return "%s : %s" % (self.username, self.text)
+
 
 # TODO change addresses
 MULTICAST_GROUP_IP = "224.0.0.1" 
@@ -102,7 +105,7 @@ class ChatView(object):
         if key == 'enter':
             text = self.input_widget.edit_text
             if len(text) > 0:
-                if text == 'quit':
+                if text == ':q':
                     raise urwid.ExitMainLoop()
                 message = self.chat_controller.send_msg(text)
                 self.input_widget.set_edit_text('')
@@ -120,7 +123,9 @@ class ChatView(object):
                 
     def show_messages(self):
         #print("[%s] : %s" % (message.username, message.text))
-        message_text = '\n'.join([m.text for m in self.messages])
+        #print self.message_widget.sizing()
+        #print self.message_widget.rows((10,))
+        message_text = '\n'.join([str(m) for m in self.messages])
         self.message_widget.set_text(message_text)
     
     
