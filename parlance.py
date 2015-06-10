@@ -10,6 +10,8 @@ from random import choice
 import cPickle as pickle
 
 # TODO should be able to use the same socket
+# TODO retain focus on input widget
+# TODO redirect 'up' and 'down' keys to message_widget for scrolling
 
 # TODO change addresses
 MULTICAST_GROUP_IP = "224.0.0.1" 
