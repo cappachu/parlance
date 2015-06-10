@@ -8,6 +8,7 @@ import struct
 import urwid
 import cPickle as pickle
 
+# TODO should be able to use the same socket
 
 # TODO change addresses
 MULTICAST_GROUP_IP = "224.0.0.1" 
@@ -94,6 +95,7 @@ class ChatController(object):
         return msg
 
 
+
 class ChatView(object):
     def __init__(self, chat_controller):
         self.chat_controller = chat_controller
@@ -102,11 +104,10 @@ class ChatView(object):
         self.init_widgets()
         
     def init_widgets(self):
-        self.message_widget = urwid.Text('')
+        self.message_widget = urwid.ListBox(urwid.SimpleFocusListWalker([]))
         self.input_widget = urwid.Edit("> ")
-        self.frame_widget = urwid.Frame(
-                body = urwid.Filler(self.message_widget, valign='top'),
-                footer = self.input_widget,
+        self.frame_widget = urwid.Frame(urwid.AttrWrap(self.message_widget, 'body'), 
+                footer=self.input_widget,
                 focus_part = 'footer')
         self.loop = urwid.MainLoop(self.frame_widget, unhandled_input=self.handle_input)
 
@@ -123,6 +124,7 @@ class ChatView(object):
         self.messages.append(message)
 
     def show(self):
+        # TODO use select / gevent instead?
         self.loop.set_alarm_in(0.25, self.paint)
         self.loop.run()
 
@@ -131,18 +133,12 @@ class ChatView(object):
         loop.set_alarm_in(0.25, self.paint)
                 
     def show_messages(self):
-        #print("[%s] : %s" % (message.username, message.text))
-        #print self.message_widget.sizing()
-        #print self.message_widget.rows((10,))
-
-        #message_text = '\n'.join([str(m) for m in self.messages])
-        #self.message_widget.set_text(message_text)
-
         while True:
             try:
                 message = self.messages.pop(0)
                 if message is not None:
-                    self.message_widget.set_text(self.message_widget.text + '\n' + str(message))
+                    self.message_widget.body.append(urwid.Text(str(message)))
+                    self.message_widget.focus_position += 1
             except IndexError:
                 break
 
