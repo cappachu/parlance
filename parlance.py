@@ -18,8 +18,7 @@ MULTICAST_GROUP_IP = "224.0.0.1"
 MULTICAST_PORT = 9842
 # keep only the last 100 messages
 MESSAGE_BUFFER_SIZE = 100
-FOREGROUND_COLORS = ['black',
-                     'dark red',
+FOREGROUND_COLORS = ['dark red',
                      'dark green',
                      'brown',
                      'dark blue',
