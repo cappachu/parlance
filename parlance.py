@@ -6,6 +6,7 @@ import socket
 import threading
 import struct
 import urwid
+from random import choice
 import cPickle as pickle
 
 # TODO should be able to use the same socket
@@ -15,7 +16,24 @@ MULTICAST_GROUP_IP = "224.0.0.1"
 #MULTICAST_GROUP_IP = "224.6.8.11"
 #MULTICAST_GROUP_IP = "224.0.0.252" 
 MULTICAST_PORT = 9842
-
+# keep only the last 100 messages
+MESSAGE_BUFFER_SIZE = 100
+FOREGROUND_COLORS = ['black',
+                     'dark red',
+                     'dark green',
+                     'brown',
+                     'dark blue',
+                     'dark magenta',
+                     'dark cyan',
+                     'light gray',
+                     'dark gray',
+                     'light red',
+                     'light green',
+                     'yellow',
+                     'light blue',
+                     'light magenta',
+                     'light cyan',
+                     'white',]
 
 class ChatMessage(object):
     def __init__(self, username, text):
@@ -101,6 +119,8 @@ class ChatView(object):
         self.chat_controller = chat_controller
         self.chat_controller.view = self
         self.messages = []
+        self.username_2_color = {}
+        self.palette = [(c,c,'black') for c in FOREGROUND_COLORS]
         self.init_widgets()
         
     def init_widgets(self):
@@ -109,7 +129,7 @@ class ChatView(object):
         self.frame_widget = urwid.Frame(urwid.AttrWrap(self.message_widget, 'body'), 
                 footer=self.input_widget,
                 focus_part = 'footer')
-        self.loop = urwid.MainLoop(self.frame_widget, unhandled_input=self.handle_input)
+        self.loop = urwid.MainLoop(self.frame_widget, self.palette, unhandled_input=self.handle_input)
 
     def handle_input(self, key):
         if key == 'enter':
@@ -137,13 +157,15 @@ class ChatView(object):
             try:
                 message = self.messages.pop(0)
                 if message is not None:
-                    self.message_widget.body.append(urwid.Text(str(message)))
-                    self.message_widget.focus_position += 1
+                    attr = self.username_2_color.setdefault(message.username, choice(FOREGROUND_COLORS))
+                    text_widget = urwid.Text((attr, str(message)))
+                    self.message_widget.body.append(text_widget)
+                    if len(self.message_widget.body) > MESSAGE_BUFFER_SIZE:
+                        self.message_widget.body.pop(0)
+                    #self.message_widget.focus_position += 1
+                    self.message_widget.focus_position = len(self.message_widget.body) - 1
             except IndexError:
                 break
-
-    
-    
 
 
 def main():
