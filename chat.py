@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+# TODO parLANce 
 import sys
 import socket
 import threading
@@ -8,7 +9,14 @@ import urwid
 import cPickle as pickle
 
 
-class Message(object):
+# TODO change addresses
+MULTICAST_GROUP_IP = "224.0.0.1" 
+#MULTICAST_GROUP_IP = "224.6.8.11"
+#MULTICAST_GROUP_IP = "224.0.0.252" 
+MULTICAST_PORT = 9842
+
+
+class ChatMessage(object):
     def __init__(self, username, text):
         self.username = username
         self.text = text
@@ -25,10 +33,6 @@ class Message(object):
         return "%s : %s" % (self.username, self.text)
 
 
-# TODO change addresses
-MULTICAST_GROUP_IP = "224.0.0.1" 
-#MULTICAST_GROUP_IP = "224.6.8.11"
-MULTICAST_PORT = 9842
 
 class ChatController(object):
     def __init__(self, username):
@@ -44,42 +48,47 @@ class ChatController(object):
     @view.setter
     def view(self, value):
         self._view = value
-        self.display()
+        self.start_receiving_messages()
 
     def setup_socket_send(self):
         if self._sock_send is None:
-            self._sock_send = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
+            # UDP socket
+            self._sock_send = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)#, socket.IPPROTO_UDP)
+            # time to live (restrict to local area network)
             self._sock_send.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_TTL, 1)
         return self._sock_send
     
     def setup_socket_recv(self):
         if self._sock_recv is None:
-            self._sock_recv = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
+            # UDP socket
+            self._sock_recv = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)#, socket.IPPROTO_UDP)
+            # enable reuse
             self._sock_recv.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-            # TODO verify "4sl"
+            # 4 chars followed by long 
             mreq = struct.pack("4sl", socket.inet_aton(MULTICAST_GROUP_IP), socket.INADDR_ANY)
+            # add as member of multicast group
             self._sock_recv.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, mreq)
         return self._sock_recv
 
-    def display(self):
+    def start_receiving_messages(self):
         sock = self.setup_socket_recv()
         sock.bind((MULTICAST_GROUP_IP, MULTICAST_PORT))
-        t = threading.Thread(target=self.display_messages, args=(sock,))
+        t = threading.Thread(target=self.receive_messages, args=(sock,))
         t.daemon = True
         t.start()
 
-    def display_messages(self, sock):
+    def receive_messages(self, sock):
         while True:
             # TODO change buffer size
             pickled_msg = sock.recv(1024)
-            message = Message.from_pickled(pickled_msg)
+            message = ChatMessage.from_pickled(pickled_msg)
             # TODO dont display messages from self
             self.view.add_message(message)
             #if message:
                 #print message.username, ':', message.text
 
     def send_msg(self, text):
-        msg = Message(self.username, text)
+        msg = ChatMessage(self.username, text)
         sock = self.setup_socket_send()
         sock.sendto(msg.pickle(), (MULTICAST_GROUP_IP, MULTICAST_PORT))
         return msg
@@ -125,13 +134,24 @@ class ChatView(object):
         #print("[%s] : %s" % (message.username, message.text))
         #print self.message_widget.sizing()
         #print self.message_widget.rows((10,))
-        message_text = '\n'.join([str(m) for m in self.messages])
-        self.message_widget.set_text(message_text)
+
+        #message_text = '\n'.join([str(m) for m in self.messages])
+        #self.message_widget.set_text(message_text)
+
+        while True:
+            try:
+                message = self.messages.pop(0)
+                if message is not None:
+                    self.message_widget.set_text(self.message_widget.text + '\n' + str(message))
+            except IndexError:
+                break
+
     
     
 
 
 def main():
+    # TODO use argparse
     args = sys.argv[:] # copy
     if len(args) == 2:
         username = args.pop()
