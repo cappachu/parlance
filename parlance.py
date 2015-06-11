@@ -154,19 +154,15 @@ class ChatView(object):
         loop.set_alarm_in(0.25, self.paint)
                 
     def show_messages(self):
-        while True:
-            try:
-                message = self.messages.pop(0)
-                if message is not None:
-                    attr = self.username_2_color.setdefault(message.username, choice(FOREGROUND_COLORS))
-                    text_widget = urwid.Text((attr, str(message)))
-                    self.message_widget.body.append(text_widget)
-                    if len(self.message_widget.body) > MESSAGE_BUFFER_SIZE:
-                        self.message_widget.body.pop(0)
-                    #self.message_widget.focus_position += 1
-                    self.message_widget.focus_position = len(self.message_widget.body) - 1
-            except IndexError:
-                break
+        while self.messages:
+            message = self.messages.pop(0)
+            if message is not None:
+                attr = self.username_2_color.setdefault(message.username, choice(FOREGROUND_COLORS))
+                text_widget = urwid.Text((attr, str(message)))
+                self.message_widget.body.append(text_widget)
+                if len(self.message_widget.body) > MESSAGE_BUFFER_SIZE:
+                    self.message_widget.body.pop(0)
+                self.message_widget.focus_position = len(self.message_widget.body) - 1
 
 
 def main():
