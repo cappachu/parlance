@@ -27,7 +27,7 @@ Type **:q** or **:quit** to Quit
 
 ::
 
-    $ parlance John 
+    $ parlance Bob 
 
 .. image:: https://raw.github.com/cappachu/parlance/master/misc/parlance.png
 
