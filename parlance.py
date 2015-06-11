@@ -136,7 +136,7 @@ class ChatView(object):
         if key == 'enter':
             text = self.input_widget.edit_text
             if len(text) > 0:
-                if text == ':q':
+                if text == ':q' or text == ':quit':
                     raise urwid.ExitMainLoop()
                 message = self.chat_controller.send_msg(text)
                 self.input_widget.set_edit_text('')
