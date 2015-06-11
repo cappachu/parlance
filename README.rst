@@ -29,7 +29,7 @@ Pick a username and begin chatting with people on your home, office or public ne
 
 .. image:: https://raw.github.com/cappachu/parlance/master/misc/parlance.png
 
-Type `:q` or `:quit` to Quit
+Type **:q** or **:quit** to Quit
 
 
 Caveats
