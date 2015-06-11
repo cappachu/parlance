@@ -100,10 +100,10 @@ class ChatController(object):
     def receive_messages(self, sock):
         while True:
             # TODO change buffer size
-            pickled_msg = sock.recv(1024)
+            pickled_msg, address = sock.recvfrom(1024)
             message = ChatMessage.from_pickled(pickled_msg)
             # TODO dont display messages from self
-            self.view.add_message(message)
+            self.view.add_message(message, address)
             #if message:
                 #print message.username, ':', message.text
 
@@ -119,8 +119,8 @@ class ChatView(object):
     def __init__(self, chat_controller):
         self.chat_controller = chat_controller
         self.chat_controller.view = self
-        self.messages = []
-        self.username_2_color = {}
+        self.message_address_pairs = []
+        self.address_2_color = {}
         self.palette = [(c,c,'black') for c in FOREGROUND_COLORS]
         self.init_widgets()
         
@@ -141,8 +141,8 @@ class ChatView(object):
                 message = self.chat_controller.send_msg(text)
                 self.input_widget.set_edit_text('')
 
-    def add_message(self, message):
-        self.messages.append(message)
+    def add_message(self, message, address):
+        self.message_address_pairs.append((message, address))
 
     def show(self):
         # TODO use select / gevent instead?
@@ -154,10 +154,10 @@ class ChatView(object):
         loop.set_alarm_in(0.25, self.paint)
                 
     def show_messages(self):
-        while self.messages:
-            message = self.messages.pop(0)
+        while self.message_address_pairs:
+            message, address = self.message_address_pairs.pop(0)
             if message is not None:
-                attr = self.username_2_color.setdefault(message.username, choice(FOREGROUND_COLORS))
+                attr = self.address_2_color.setdefault(address, choice(FOREGROUND_COLORS))
                 text_widget = urwid.Text((attr, str(message)))
                 self.message_widget.body.append(text_widget)
                 if len(self.message_widget.body) > MESSAGE_BUFFER_SIZE:
@@ -174,7 +174,7 @@ def main():
         chat_view = ChatView(chat_controller)
         chat_view.show()
     else:
-        print 'Usage: chat username'
+        print 'Usage: parlance username'
 
 if __name__ == '__main__':
     main()
