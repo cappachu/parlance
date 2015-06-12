@@ -16,5 +16,6 @@ setup(
     },
     install_requires=[
         'urwid',
+        'argparse',
     ],
 )

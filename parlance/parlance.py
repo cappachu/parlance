@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
-# TODO parLANce 
 import sys
+import argparse
 import socket
 import threading
 import struct
@@ -9,17 +9,18 @@ import urwid
 from random import choice
 import cPickle as pickle
 
+# TODO add doc strings
 # TODO should be able to use the same socket
 # TODO retain focus on input widget
 # TODO redirect 'up' and 'down' keys to message_widget for scrolling
 
-# TODO change addresses
 MULTICAST_GROUP_IP = "224.0.0.1" 
 #MULTICAST_GROUP_IP = "224.6.8.11"
 #MULTICAST_GROUP_IP = "224.0.0.252" 
 MULTICAST_PORT = 9842
 # keep only the last 100 messages
 MESSAGE_BUFFER_SIZE = 100
+SOCKET_BUFFER_SIZE = 4096
 FOREGROUND_COLORS = ['dark red',
                      'dark green',
                      'brown',
@@ -98,13 +99,9 @@ class ChatController(object):
 
     def receive_messages(self, sock):
         while True:
-            # TODO change buffer size
-            pickled_msg, address = sock.recvfrom(1024)
+            pickled_msg, address = sock.recvfrom(SOCKET_BUFFER_SIZE)
             message = ChatMessage.from_pickled(pickled_msg)
-            # TODO dont display messages from self
             self.view.add_message(message, address)
-            #if message:
-                #print message.username, ':', message.text
 
     def send_msg(self, text):
         msg = ChatMessage(self.username, text)
@@ -166,14 +163,16 @@ class ChatView(object):
 
 def main():
     # TODO use argparse
-    args = sys.argv[:] # copy
-    if len(args) == 2:
-        username = args.pop()
-        chat_controller = ChatController(username)
-        chat_view = ChatView(chat_controller)
-        chat_view.show()
-    else:
-        print 'Usage: parlance username'
+    parser = argparse.ArgumentParser(description='Chat with Folks on Your Local Area Network')
+    parser.add_argument('username', help='username')
+    args = vars(parser.parse_args())
+    if not args['username']:
+        parser.print_help()
+        return
+    username = args['username']
+    chat_controller = ChatController(username)
+    chat_view = ChatView(chat_controller)
+    chat_view.show()
 
 if __name__ == '__main__':
     main()
