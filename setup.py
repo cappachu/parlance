@@ -7,6 +7,7 @@ setup(
     version=parlance.__version__,
     description='chat with folks on your local area network',
     author='Codanda B. Appachu',
+    author_email = 'cappachu@gmail.com',
     url='https://github.com/cappachu/parlance',
     packages=find_packages(),
     entry_points={
