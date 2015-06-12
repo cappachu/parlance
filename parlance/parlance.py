@@ -70,7 +70,7 @@ class ChatController(object):
     @view.setter
     def view(self, value):
         self._view = value
-        # begin receiveing messages the moment view is set
+        # begin receiveing messages once the view is set
         self.start_receiving_messages()
 
     def setup_socket_send(self):
@@ -94,7 +94,7 @@ class ChatController(object):
         return self._sock_recv
 
     def start_receiving_messages(self):
-        """Spawn thread to handle receiving messages"""
+        """Spawn thread to handle receiving messages, called when view is set"""
         sock = self.setup_socket_recv()
         sock.bind((MULTICAST_GROUP_IP, MULTICAST_PORT))
         t = threading.Thread(target=self.receive_messages, args=(sock,))
@@ -102,10 +102,11 @@ class ChatController(object):
         t.start()
 
     def receive_messages(self, sock):
-        """Repeatedly check for messages, unpickle and send to view"""
+        """Repeatedly check for messages, unpickle and send to view, called when view is set"""
         while True:
             pickled_msg, address = sock.recvfrom(SOCKET_BUFFER_SIZE)
             message = ChatMessage.from_pickled(pickled_msg)
+            assert(view is not None)
             self.view.add_message(message, address)
 
     def send_msg(self, text):
