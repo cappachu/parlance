@@ -11,6 +11,7 @@ import cPickle as pickle
 
 # TODO retain focus on input widget
 # TODO redirect 'up' and 'down' keys to message_widget for scrolling
+# TODO display how to quit
 
 MULTICAST_GROUP_IP = "224.0.0.1" 
 #MULTICAST_GROUP_IP = "224.6.8.11"

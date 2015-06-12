@@ -21,7 +21,7 @@ or
 Start Speaking Localese with Ease:
 ----------------------------------
 
-Pick a username/handle and begin chatting with people on your home, office, cafe or public network.
+Pick a username/handle and begin chatting with people on your home, office, cafe or public network. You can even chat over an adhoc network.
 
 Type **:q** or **:quit** to Quit
 
