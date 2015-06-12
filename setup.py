@@ -5,7 +5,7 @@ import parlance
 setup(
     name='parlance',
     version=parlance.__version__,
-    description='chat with folks on your local area network',
+    description='Chat with Folks on Your Local Area Network',
     author='Codanda B. Appachu',
     author_email = 'cappachu@gmail.com',
     url='https://github.com/cappachu/parlance',
