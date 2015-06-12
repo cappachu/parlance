@@ -18,4 +18,6 @@ setup(
         'urwid',
         'argparse',
     ],
+    download_url = 'https://github.com/cappachu/parlance/tarball/1.0.0' 
+    keywords = ['multicast', 'chat', 'local area network']
 )
