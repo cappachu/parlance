@@ -9,7 +9,7 @@ import urwid
 from random import choice
 import cPickle as pickle
 
-# TODO add doc strings
+# TODO review MVC connections
 # TODO should be able to use the same socket
 # TODO retain focus on input widget
 # TODO redirect 'up' and 'down' keys to message_widget for scrolling
@@ -43,6 +43,7 @@ class ChatMessage(object):
 
     @classmethod
     def from_pickled(cls, pickled_msg):
+        """Instantiate ChatMessage from pickled message"""
         # TODO review
         return pickle.loads(pickled_msg)
 
@@ -55,6 +56,7 @@ class ChatMessage(object):
 
 
 class ChatController(object):
+    """Manages message sending and receiving messages"""
     def __init__(self, username):
         self.username = username
         self._view = None
@@ -68,13 +70,14 @@ class ChatController(object):
     @view.setter
     def view(self, value):
         self._view = value
+        # begin receiveing messages the moment view is set
         self.start_receiving_messages()
 
     def setup_socket_send(self):
         if self._sock_send is None:
             # UDP socket
-            self._sock_send = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)#, socket.IPPROTO_UDP)
-            # time to live (restrict to local area network)
+            self._sock_send = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            # TTL: time to live (restrict to local area network)
             self._sock_send.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_TTL, 1)
         return self._sock_send
     
@@ -84,13 +87,14 @@ class ChatController(object):
             self._sock_recv = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)#, socket.IPPROTO_UDP)
             # enable reuse
             self._sock_recv.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-            # 4 chars followed by long 
+            # 4sl: 4 chars followed by long 
             mreq = struct.pack("4sl", socket.inet_aton(MULTICAST_GROUP_IP), socket.INADDR_ANY)
             # add as member of multicast group
             self._sock_recv.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, mreq)
         return self._sock_recv
 
     def start_receiving_messages(self):
+        """Spawn thread to handle receiving messages"""
         sock = self.setup_socket_recv()
         sock.bind((MULTICAST_GROUP_IP, MULTICAST_PORT))
         t = threading.Thread(target=self.receive_messages, args=(sock,))
@@ -98,12 +102,14 @@ class ChatController(object):
         t.start()
 
     def receive_messages(self, sock):
+        """Repeatedly check for messages, unpickle and send to view"""
         while True:
             pickled_msg, address = sock.recvfrom(SOCKET_BUFFER_SIZE)
             message = ChatMessage.from_pickled(pickled_msg)
             self.view.add_message(message, address)
 
     def send_msg(self, text):
+        """Send pickled message"""
         msg = ChatMessage(self.username, text)
         sock = self.setup_socket_send()
         sock.sendto(msg.pickle(), (MULTICAST_GROUP_IP, MULTICAST_PORT))
@@ -112,15 +118,21 @@ class ChatController(object):
 
 
 class ChatView(object):
+    """Display messages and provide means for sending messages"""
     def __init__(self, chat_controller):
         self.chat_controller = chat_controller
         self.chat_controller.view = self
-        self.message_address_pairs = []
+        # list of (message, address) tuples received
+        self.message_address_pairs = [] 
         self.address_2_color = {}
+        # urwid palette list of tuples 
+        # containing (display_attr_name, foreground_color, background_color)
         self.palette = [(c,c,'black') for c in FOREGROUND_COLORS]
         self.init_widgets()
         
     def init_widgets(self):
+        """Initialize main Frame containing a ListBox (for displaying all messages) 
+           and a Edit widget for sending a message"""
         self.message_widget = urwid.ListBox(urwid.SimpleFocusListWalker([]))
         self.input_widget = urwid.Edit("> ")
         self.frame_widget = urwid.Frame(urwid.AttrWrap(self.message_widget, 'body'), 
@@ -141,28 +153,35 @@ class ChatView(object):
         self.message_address_pairs.append((message, address))
 
     def show(self):
-        # TODO use select / gevent instead?
+        """Start main gui loop and repeatedly paint to display new messages"""
+        # TODO use select / gevent / thread instead?
+        # schedule a callback (self.paint)
         self.loop.set_alarm_in(0.25, self.paint)
         self.loop.run()
 
     def paint(self, loop, user_data):
         self.show_messages()
+        # schedule a callback (self.paint)
         loop.set_alarm_in(0.25, self.paint)
                 
     def show_messages(self):
+        """Display all messages received so far"""
         while self.message_address_pairs:
+            # FIFO: oldest messages first
             message, address = self.message_address_pairs.pop(0)
             if message is not None:
                 attr = self.address_2_color.setdefault(address, choice(FOREGROUND_COLORS))
                 text_widget = urwid.Text((attr, str(message)))
+                # append to the list of widgets (body) of ListBox (message_widget) managed by ListWalker
                 self.message_widget.body.append(text_widget)
+                # display and store a limited number of messages
                 if len(self.message_widget.body) > MESSAGE_BUFFER_SIZE:
                     self.message_widget.body.pop(0)
+                # make newest messages visible 
                 self.message_widget.focus_position = len(self.message_widget.body) - 1
 
 
 def main():
-    # TODO use argparse
     parser = argparse.ArgumentParser(description='Chat with Folks on Your Local Area Network')
     parser.add_argument('username', help='username')
     args = vars(parser.parse_args())
