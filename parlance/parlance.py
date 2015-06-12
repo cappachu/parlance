@@ -106,7 +106,7 @@ class ChatController(object):
         while True:
             pickled_msg, address = sock.recvfrom(SOCKET_BUFFER_SIZE)
             message = ChatMessage.from_pickled(pickled_msg)
-            assert(view is not None)
+            assert(self.view is not None)
             self.view.add_message(message, address)
 
     def send_msg(self, text):
