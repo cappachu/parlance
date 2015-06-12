@@ -21,7 +21,7 @@ or
 Start Speaking Localese with Ease:
 ----------------------------------
 
-Pick a username and begin chatting with people on your home, office or public network.
+Pick a username/handle and begin chatting with people on your home, office, cafe or public network.
 
 Type **:q** or **:quit** to Quit
 
@@ -35,6 +35,8 @@ Type **:q** or **:quit** to Quit
 
 Caveats
 -------
-- 
+- Messages are sent over the wire unencrypted
+- Multiple users can select the same handle/username
+- Doesn't run on a Windows host without tweaking
 
 
