@@ -9,8 +9,6 @@ import urwid
 from random import choice
 import cPickle as pickle
 
-# TODO review MVC connections
-# TODO should be able to use the same socket
 # TODO retain focus on input widget
 # TODO redirect 'up' and 'down' keys to message_widget for scrolling
 
@@ -41,10 +39,9 @@ class ChatMessage(object):
         self.username = username
         self.text = text
 
-    @classmethod
-    def from_pickled(cls, pickled_msg):
+    @staticmethod
+    def from_pickled(pickled_msg):
         """Instantiate ChatMessage from pickled message"""
-        # TODO review
         return pickle.loads(pickled_msg)
 
     def pickle(self):
