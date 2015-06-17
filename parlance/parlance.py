@@ -6,8 +6,8 @@ import socket
 import threading
 import struct
 import urwid
+import json
 from random import choice
-import cPickle as pickle
 
 # TODO retain focus on input widget
 # TODO redirect 'up' and 'down' keys to message_widget for scrolling
@@ -40,13 +40,15 @@ class ChatMessage(object):
         self.username = username
         self.text = text
 
-    @staticmethod
-    def from_pickled(pickled_msg):
-        """Instantiate ChatMessage from pickled message"""
-        return pickle.loads(pickled_msg)
+    @classmethod
+    def from_json(cls, json_msg):
+        """Instantiate ChatMessage from json"""
+        decoded = json.loads(json_msg)
+        return cls(decoded['username'], decoded['text'])
 
-    def pickle(self):
-        return pickle.dumps(self) 
+    def json(self):
+        obj_dict = {'username':self.username, 'text':self.text}
+        return json.dumps(obj_dict) 
 
     def __str__(self):
         return "%s : %s" % (self.username, self.text)
@@ -100,18 +102,18 @@ class ChatController(object):
         t.start()
 
     def receive_messages(self, sock):
-        """Repeatedly check for messages, unpickle and send to view, called when view is set"""
+        """Repeatedly check for messages, deserialize and send to view, called when view is set"""
         while True:
-            pickled_msg, address = sock.recvfrom(SOCKET_BUFFER_SIZE)
-            message = ChatMessage.from_pickled(pickled_msg)
+            json_msg, address = sock.recvfrom(SOCKET_BUFFER_SIZE)
+            message = ChatMessage.from_json(json_msg)
             assert(self.view is not None)
             self.view.add_message(message, address)
 
     def send_msg(self, text):
-        """Send pickled message"""
+        """Send json message"""
         msg = ChatMessage(self.username, text)
         sock = self.setup_socket_send()
-        sock.sendto(msg.pickle(), (MULTICAST_GROUP_IP, MULTICAST_PORT))
+        sock.sendto(msg.json(), (MULTICAST_GROUP_IP, MULTICAST_PORT))
         return msg
 
 
