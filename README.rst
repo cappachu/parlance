@@ -2,7 +2,7 @@
 parLANce: chat with folks on your local area network 
 ====================================================
 
-parLANce is a bare bones terminal chat program that connects you with people on the same local area network.
+parLANce is a bare bones terminal chat program that connects you with people on the same local area network. It uses raw sockets to broadcast messages via multicast IP.
 
 
 Installation
