@@ -9,13 +9,11 @@ import urwid
 import json
 from random import choice
 
-# TODO retain focus on input widget
-# TODO redirect 'up' and 'down' keys to message_widget for scrolling
+# TODO retain focus on input widget on click
+# TODO redirect 'up' and 'down' key events to message_widget for scrolling
 # TODO display how to quit
 
 MULTICAST_GROUP_IP = "224.0.0.1" 
-#MULTICAST_GROUP_IP = "224.6.8.11"
-#MULTICAST_GROUP_IP = "224.0.0.252" 
 MULTICAST_PORT = 9842
 # keep only the last 100 messages
 MESSAGE_BUFFER_SIZE = 100
